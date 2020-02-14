@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: "Merlin Pipeline Management: Merlin Python Layer"
+Description: "Merlin Pipeline Management: Merlin Gateway"
 Parameters:
   Branch:
     Type: String
@@ -16,14 +16,6 @@ Parameters:
     Type: String
 
 Resources:
-  Param:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Description: Test
-      Name: /codepipeline/artifact-bucket
-      Type: String
-      Value: !Ref ArtifactBucket
-
   CodeBuildProject:
     Type: AWS::CodeBuild::Project
     Properties:

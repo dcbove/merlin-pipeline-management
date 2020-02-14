@@ -19,6 +19,14 @@ Parameters:
     Default: appleforge-merlin-artifacts
 
 Resources:
+#  Param:
+#    Type: AWS::SSM::Parameter
+#    Properties:
+#      Description: Test
+#      Name: /codepipeline/artifact-bucket
+#      Type: String
+#      Value: !Ref ArtifactBucket
+
   IamRolesStack:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -36,6 +44,18 @@ Resources:
         Branch: !Ref Branch
         ArtifactBucket: !Ref ArtifactBucket
         ManagedApp: merlin-python-layer
+        CodeBuildRoleArn: !GetAtt IamRolesStack.Outputs.CodeBuildRoleArn
+        CodePipelineRoleArn: !GetAtt IamRolesStack.Outputs.CodePipelineRoleArn
+        CloudFormationDeployerRoleArn: !GetAtt IamRolesStack.Outputs.CloudFormationDeployerRoleArn
+
+  MerlinGatewayPipeline:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: merlin-gateway-pipeline.yml
+      Parameters:
+        Branch: !Ref Branch
+        ArtifactBucket: !Ref ArtifactBucket
+        ManagedApp: merlin-gateway
         CodeBuildRoleArn: !GetAtt IamRolesStack.Outputs.CodeBuildRoleArn
         CodePipelineRoleArn: !GetAtt IamRolesStack.Outputs.CodePipelineRoleArn
         CloudFormationDeployerRoleArn: !GetAtt IamRolesStack.Outputs.CloudFormationDeployerRoleArn
