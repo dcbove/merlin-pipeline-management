@@ -1,0 +1,23 @@
+{
+  "name": "merlin-gateway",
+  "version": "1.0.0",
+  "description": "Merlin Gateway",
+  "dependencies": {},
+  "devDependencies": {
+    "grunt": "^1.0.4",
+    "grunt-aws-s3": "^2.0.2",
+    "grunt-concurrent": "^3.0.0",
+    "grunt-env": "^1.0.1",
+    "grunt-exec": "^3.0.0",
+    "grunt-set-env": "^0.1.3",
+    "grunt-zip": "^0.18.2"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:dcbove/merlin-gateway.git"
+  },
+  "author": "dcbove"
+}

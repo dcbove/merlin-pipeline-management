@@ -1,0 +1,142 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Merlin Pipeline Management: Merlin Python Layer"
+Parameters:
+  Branch:
+    Type: String
+    AllowedValues:
+    - master
+    - develop
+    Default: master
+  App:
+    Type: String
+    AllowedValues:
+    - merlin-gateway
+    Default: merlin-gateway
+  ArtifactBucket:
+    Type: String
+    AllowedValues:
+    - appleforge-merlin-artifacts
+    Default: appleforge-merlin-artifacts
+
+
+Resources:
+  Param:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: Test
+      Name: /codepipeline/artifact-bucket
+      Type: String
+      Value: !Ref ArtifactBucket
+
+  CodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        EncryptionDisabled: false
+        NamespaceType: NONE
+        OverrideArtifactName: false
+        Type: CODEPIPELINE
+      Cache:
+        Type: NO_CACHE
+      Description: "Build the merlin-python-layer project"
+      EncryptionKey: "arn:aws:kms:us-east-1:291743709387:alias/aws/s3"
+      Environment:
+        Type: LINUX_CONTAINER
+        Image: "aws/codebuild/amazonlinux2-x86_64-standard:2.0"
+        ComputeType: BUILD_GENERAL1_SMALL
+        PrivilegedMode: false
+        ImagePullCredentialsType: CODEBUILD
+      LogsConfig:
+        CloudWatchLogs:
+          GroupName: !Sub "codebuild/merlin-python-layer"
+          Status: ENABLED
+      Name: merlin-python-layer-build
+      QueuedTimeoutInMinutes: 480
+      ServiceRole: "arn:aws:iam::291743709387:role/service-role/codebuild-merlin-python-layer-build-service-role"
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: "aws-artifacts/codebuild/buildspec.yml"
+        InsecureSsl: false
+      TimeoutInMinutes: 60
+
+  CodePipelineWebhook:
+    Type: AWS::CodePipeline::Webhook
+    Properties:
+      Authentication: GITHUB_HMAC
+      AuthenticationConfiguration:
+        SecretToken: 100
+      Filters:
+      - JsonPath: "$.ref"
+        MatchEquals: "refs/heads/{Branch}"
+      RegisterWithThirdParty: true
+      TargetAction: Source
+      TargetPipeline: !Ref CodePipeline
+      TargetPipelineVersion: !GetAtt CodePipeline.Version
+
+  CodePipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      ArtifactStore:
+        Type: S3
+        Location: !Ref ArtifactBucket
+      Name: "merlin-python-layer"
+      RoleArn: "arn:aws:iam::291743709387:role/service-role/AWSCodePipelineServiceRole-us-east-1-merlin-python-layer"
+      Stages:
+      - Name: Source
+        Actions:
+        - ActionTypeId:
+            Category: Source
+            Owner: ThirdParty
+            Provider: GitHub
+            Version: 1
+          Configuration:
+            Branch: master
+            OAuthToken: "{{resolve:ssm:/codepipeline/oauthtoken:1}}"
+            Owner: dcbove
+            PollForSourceChanges: false
+            Repo: merlin-python-layer
+          Name: Source
+          Namespace: SourceVariables
+          OutputArtifacts:
+          - Name: SourceArtifact
+          RunOrder: 100
+      - Name: Build
+        Actions:
+        - ActionTypeId:
+            Category: Build
+            Owner: AWS
+            Provider: CodeBuild
+            Version: 1
+          Configuration:
+            ProjectName: !Ref CodeBuildProject
+          InputArtifacts:
+          - Name: SourceArtifact
+          Name: Build
+          Namespace: BuildVariables
+          OutputArtifacts:
+          - Name: BuildArtifact
+          RunOrder: 200
+      - Name: Deploy
+        Actions:
+        - ActionTypeId:
+            Category: Deploy
+            Owner: AWS
+            Provider: CloudFormation
+            Version: 1
+          Configuration:
+            ActionMode: CREATE_UPDATE
+            ParameterOverrides: |
+              {
+                "ArtifactBucket" : { "Fn::GetArtifactAtt" : ["BuildArtifact", "BucketName"]},
+                "ArtifactKey" : { "Fn::GetArtifactAtt" : ["BuildArtifact", "ObjectKey"]}
+              }
+            RoleArn: "arn:aws:iam::291743709387:role/codedeploy-deleteme"
+            StackName: "master-merlin-python-layer"
+            TemplatePath: "SourceArtifact::aws-artifacts/cfn/layer.yml"
+          InputArtifacts:
+          - Name: SourceArtifact
+          - Name: BuildArtifact
+          Name: Deploy
+          Namespace: DeployVariables
+          RunOrder: 300
+

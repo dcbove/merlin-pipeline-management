@@ -1,0 +1,40 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Merlin Pipeline Management: Master Stack"
+Parameters:
+  Branch:
+    Type: String
+    AllowedValues:
+    - master
+    - develop
+    Default: master
+  App:
+    Type: String
+    AllowedValues:
+    - merlin-gateway
+    Default: merlin-gateway
+  ArtifactBucket:
+    Type: String
+    AllowedValues:
+    - appleforge-merlin-artifacts
+    Default: appleforge-merlin-artifacts
+
+Resources:
+  MerlinPythonLayerPipeline:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: merlin-python-layer-pipeline.yml
+      Parameters:
+        Branch: !Ref Branch
+        ArtifactBucket: !Ref ArtifactBucket
+        App: !Ref App
+#
+#  ApiGatewayStack:
+#    Type: AWS::CloudFormation::Stack
+#    Properties:
+#      TemplateURL: apigateway.yml
+#      Parameters:
+#        Branch: !Ref Branch
+#        App: !Ref App
+#        ArtifactBucket: !Ref ArtifactBucket
+#        GameSearchLambdaArn: !GetAtt LambdaStack.Outputs.GameSearchLambdaArn
+
