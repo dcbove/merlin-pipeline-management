@@ -3,21 +3,17 @@ Description: "Merlin Pipeline Management: Merlin Python Layer"
 Parameters:
   Branch:
     Type: String
-    AllowedValues:
-    - master
-    - develop
-    Default: master
-  App:
+  ManagedApp:
     Type: String
-    AllowedValues:
-    - merlin-gateway
-    Default: merlin-gateway
+    Description: The application (or project) being deployed by this pipeline
   ArtifactBucket:
     Type: String
-    AllowedValues:
-    - appleforge-merlin-artifacts
-    Default: appleforge-merlin-artifacts
-
+  CodeBuildRoleArn:
+    Type: String
+  CodePipelineRoleArn:
+    Type: String
+  CloudFormationDeployerRoleArn:
+    Type: String
 
 Resources:
   Param:
@@ -38,8 +34,8 @@ Resources:
         Type: CODEPIPELINE
       Cache:
         Type: NO_CACHE
-      Description: "Build the merlin-python-layer project"
-      EncryptionKey: "arn:aws:kms:us-east-1:291743709387:alias/aws/s3"
+      Description: !Sub "Build the ${ManagedApp} project"
+      EncryptionKey: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:alias/aws/s3"
       Environment:
         Type: LINUX_CONTAINER
         Image: "aws/codebuild/amazonlinux2-x86_64-standard:2.0"
@@ -48,11 +44,11 @@ Resources:
         ImagePullCredentialsType: CODEBUILD
       LogsConfig:
         CloudWatchLogs:
-          GroupName: !Sub "codebuild/merlin-python-layer"
+          GroupName: !Sub "/aws/codepipeline/${ManagedApp}"
           Status: ENABLED
       Name: merlin-python-layer-build
       QueuedTimeoutInMinutes: 480
-      ServiceRole: "arn:aws:iam::291743709387:role/service-role/codebuild-merlin-python-layer-build-service-role"
+      ServiceRole: !Ref CodeBuildRoleArn
       Source:
         Type: CODEPIPELINE
         BuildSpec: "aws-artifacts/codebuild/buildspec.yml"
@@ -80,7 +76,8 @@ Resources:
         Type: S3
         Location: !Ref ArtifactBucket
       Name: "merlin-python-layer"
-      RoleArn: "arn:aws:iam::291743709387:role/service-role/AWSCodePipelineServiceRole-us-east-1-merlin-python-layer"
+      RoleArn: !Ref CodePipelineRoleArn
+#      RoleArn: "arn:aws:iam::291743709387:role/service-role/AWSCodePipelineServiceRole-us-east-1-merlin-python-layer"
       Stages:
       - Name: Source
         Actions:
@@ -130,8 +127,12 @@ Resources:
                 "ArtifactBucket" : { "Fn::GetArtifactAtt" : ["BuildArtifact", "BucketName"]},
                 "ArtifactKey" : { "Fn::GetArtifactAtt" : ["BuildArtifact", "ObjectKey"]}
               }
-            RoleArn: "arn:aws:iam::291743709387:role/codedeploy-deleteme"
-            StackName: "master-merlin-python-layer"
+            RoleArn: !Ref CloudFormationDeployerRoleArn
+#            RoleArn: "arn:aws:iam::291743709387:role/codedeploy-deleteme"
+            StackName: !Sub
+              - "${branch}-${managedapp}"
+              - branch: !Ref Branch
+                managedapp: !Ref ManagedApp
             TemplatePath: "SourceArtifact::aws-artifacts/cfn/layer.yml"
           InputArtifacts:
           - Name: SourceArtifact

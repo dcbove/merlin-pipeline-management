@@ -10,8 +10,8 @@ Parameters:
   App:
     Type: String
     AllowedValues:
-    - merlin-gateway
-    Default: merlin-gateway
+    - merlin-pipeline-management
+    Default: merlin-pipeline-management
   ArtifactBucket:
     Type: String
     AllowedValues:
@@ -19,6 +19,15 @@ Parameters:
     Default: appleforge-merlin-artifacts
 
 Resources:
+  IamRolesStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: iamroles.yml
+      Parameters:
+        Branch: !Ref Branch
+        App: !Ref App
+        ArtifactBucket: !Ref ArtifactBucket
+
   MerlinPythonLayerPipeline:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -26,15 +35,9 @@ Resources:
       Parameters:
         Branch: !Ref Branch
         ArtifactBucket: !Ref ArtifactBucket
-        App: !Ref App
-#
-#  ApiGatewayStack:
-#    Type: AWS::CloudFormation::Stack
-#    Properties:
-#      TemplateURL: apigateway.yml
-#      Parameters:
-#        Branch: !Ref Branch
-#        App: !Ref App
-#        ArtifactBucket: !Ref ArtifactBucket
-#        GameSearchLambdaArn: !GetAtt LambdaStack.Outputs.GameSearchLambdaArn
+        ManagedApp: merlin-python-layer
+        CodeBuildRoleArn: !GetAtt IamRolesStack.Outputs.CodeBuildRoleArn
+        CodePipelineRoleArn: !GetAtt IamRolesStack.Outputs.CodePipelineRoleArn
+        CloudFormationDeployerRoleArn: !GetAtt IamRolesStack.Outputs.CloudFormationDeployerRoleArn
+
 
