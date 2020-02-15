@@ -58,7 +58,7 @@ module.exports = function (grunt) {
                 cmd: function () {
                     var aws_command = 'aws cloudformation package ' +
                         ' --region ' + global.region + ' ' +
-                        ' --template-file  aws-artifacts/cfn/master.yml' +
+                        ' --template-file  aws-artifacts/cfn/base.yml' +
                         ' --s3-bucket ' + global.artifact_bucket + ' ' +
                         ' --s3-prefix ' + global.app + '/' + global.branch + '/templates ' +
                         ' --output-template-file ' + global.output_template_file_name;

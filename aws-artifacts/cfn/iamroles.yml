@@ -60,6 +60,16 @@ Resources:
             - codebuild:BatchPutTestCases
             Resource:
             - !Sub "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:report-group/*"
+      - PolicyName: GetPipelineStats
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          - Effect: "Allow"
+            Action:
+            - codepipeline:ListActionExecutions
+            - codepipeline:GetPipeline
+            Resource:
+            - "*"
 
   CodePipelineRole:
     Type: AWS::IAM::Role
