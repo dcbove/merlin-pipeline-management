@@ -39,7 +39,7 @@ Resources:
   MerlinPythonLayerPipeline:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: merlin-python-layer-pipeline.yml
+      TemplateURL: python-layer-pipeline.yml
       Parameters:
         Branch: !Ref Branch
         ArtifactBucket: !Ref ArtifactBucket
@@ -47,11 +47,17 @@ Resources:
         CodeBuildRoleArn: !GetAtt IamRolesStack.Outputs.CodeBuildRoleArn
         CodePipelineRoleArn: !GetAtt IamRolesStack.Outputs.CodePipelineRoleArn
         CloudFormationDeployerRoleArn: !GetAtt IamRolesStack.Outputs.CloudFormationDeployerRoleArn
+        TemplatePath: aws-artifacts/cfn/layer.yml
+        ParameterOverrides: |
+          {
+            "ArtifactBucket" : { "Fn::GetArtifactAtt" : ["BuildArtifact", "BucketName"]},
+            "ArtifactKey" : { "Fn::GetArtifactAtt" : ["BuildArtifact", "ObjectKey"]}
+          }
 
   MerlinGatewayPipeline:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: merlin-gateway-pipeline.yml
+      TemplateURL: cfn-and-lambda-pipeline.yml
       Parameters:
         Branch: !Ref Branch
         ArtifactBucket: !Ref ArtifactBucket
@@ -59,5 +65,11 @@ Resources:
         CodeBuildRoleArn: !GetAtt IamRolesStack.Outputs.CodeBuildRoleArn
         CodePipelineRoleArn: !GetAtt IamRolesStack.Outputs.CodePipelineRoleArn
         CloudFormationDeployerRoleArn: !GetAtt IamRolesStack.Outputs.CloudFormationDeployerRoleArn
+        TemplatePath: merlin-gateway-template.yml
+        ParameterOverrides: |
+          {
+            "ArtifactBucket" : { "Fn::GetArtifactAtt" : ["BuildArtifact", "BucketName"]},
+            "LambdaZipName" : "#{BuildVariables.LAMBDA_FILE_KEY}"
+          }
 
 

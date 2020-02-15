@@ -1,7 +1,7 @@
 {
-  "name": "merlin-gateway",
+  "name": "merlin-pipeline-management",
   "version": "1.0.0",
-  "description": "Merlin Gateway",
+  "description": "Merlin Pipeline Management",
   "dependencies": {},
   "devDependencies": {
     "grunt": "^1.0.4",
@@ -17,7 +17,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:dcbove/merlin-gateway.git"
+    "url": "git@github.com:dcbove/merlin-pipeline-management.git"
   },
   "author": "dcbove"
 }

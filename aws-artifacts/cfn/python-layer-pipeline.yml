@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: "Merlin Pipeline Management: Merlin Gateway"
+Description: "Merlin Pipeline Management: Merlin Python Layer"
 Parameters:
   Branch:
     Type: String
@@ -14,6 +14,13 @@ Parameters:
     Type: String
   CloudFormationDeployerRoleArn:
     Type: String
+  TemplatePath:
+    Type: String
+    Description: "Sample value: aws-artifacts/cfn/layer.yml"
+  ParameterOverrides:
+    Type: String
+    Description: This is the population of dynamic values passed to the CloudFormation template during cfn deploy
+
 
 Resources:
   CodeBuildProject:
@@ -113,17 +120,13 @@ Resources:
             Version: 1
           Configuration:
             ActionMode: CREATE_UPDATE
-            ParameterOverrides: |
-              {
-                "ArtifactBucket" : { "Fn::GetArtifactAtt" : ["BuildArtifact", "BucketName"]},
-                "ArtifactKey" : { "Fn::GetArtifactAtt" : ["BuildArtifact", "ObjectKey"]}
-              }
+            ParameterOverrides: !Ref ParameterOverrides
             RoleArn: !Ref CloudFormationDeployerRoleArn
             StackName: !Sub
               - "${branch}-${managedapp}"
               - branch: !Ref Branch
                 managedapp: !Ref ManagedApp
-            TemplatePath: "SourceArtifact::aws-artifacts/cfn/layer.yml"
+            TemplatePath: !Sub "SourceArtifact::${TemplatePath}"
           InputArtifacts:
           - Name: SourceArtifact
           - Name: BuildArtifact
