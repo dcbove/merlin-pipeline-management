@@ -5,8 +5,8 @@ Parameters:
     Type: String
     AllowedValues:
     - master
-    - develop
     Default: master
+    Description: The branch from which the the pipeline-management-project should be built
   App:
     Type: String
     AllowedValues:
@@ -30,46 +30,30 @@ Resources:
   IamRolesStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: iamroles.yml
+      TemplateURL: templates/iamroles.yml
       Parameters:
         Branch: !Ref Branch
         App: !Ref App
         ArtifactBucket: !Ref ArtifactBucket
 
-  MerlinPythonLayerPipeline:
+  MerlinGatewayCICDPipelines:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: python-layer-pipeline.yml
+      TemplateURL: projects/merlin-gateway-pipeline.yml
       Parameters:
-        Branch: master
-        ArtifactBucket: !Ref ArtifactBucket
-        ManagedApp: merlin-python-layer
-        CodeBuildRoleArn: !GetAtt IamRolesStack.Outputs.CodeBuildRoleArn
-        CodePipelineRoleArn: !GetAtt IamRolesStack.Outputs.CodePipelineRoleArn
-        CloudFormationDeployerRoleArn: !GetAtt IamRolesStack.Outputs.CloudFormationDeployerRoleArn
-        TemplatePath: aws-artifacts/cfn/layer.yml
-        ParameterOverrides: |
-          {
-            "ArtifactBucket" : { "Fn::GetArtifactAtt" : ["BuildArtifact", "BucketName"]},
-            "ArtifactKey" : { "Fn::GetArtifactAtt" : ["BuildArtifact", "ObjectKey"]}
-          }
-
-  MerlinGatewayPipeline:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: cfn-and-lambda-pipeline.yml
-      Parameters:
-        Branch: master
         ArtifactBucket: !Ref ArtifactBucket
         ManagedApp: merlin-gateway
         CodeBuildRoleArn: !GetAtt IamRolesStack.Outputs.CodeBuildRoleArn
         CodePipelineRoleArn: !GetAtt IamRolesStack.Outputs.CodePipelineRoleArn
         CloudFormationDeployerRoleArn: !GetAtt IamRolesStack.Outputs.CloudFormationDeployerRoleArn
-        TemplatePath: merlin-gateway-template.yml
-        ParameterOverrides: |
-          {
-            "ArtifactBucket" : { "Fn::GetArtifactAtt" : ["BuildArtifact", "BucketName"]},
-            "LambdaZipName" : "#{BuildVariables.LAMBDA_FILE_KEY}"
-          }
 
-
+  MerlinPythonLayerCICDPipelines:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: projects/merlin-python-layer-pipeline.yml
+      Parameters:
+        ArtifactBucket: !Ref ArtifactBucket
+        ManagedApp: merlin-python-layer
+        CodeBuildRoleArn: !GetAtt IamRolesStack.Outputs.CodeBuildRoleArn
+        CodePipelineRoleArn: !GetAtt IamRolesStack.Outputs.CodePipelineRoleArn
+        CloudFormationDeployerRoleArn: !GetAtt IamRolesStack.Outputs.CloudFormationDeployerRoleArn

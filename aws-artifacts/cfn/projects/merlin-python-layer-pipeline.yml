@@ -1,0 +1,35 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Merlin Pipeline Management: Base Stack"
+Parameters:
+  ArtifactBucket:
+    Type: String
+  ManagedApp:
+    Type: String
+    AllowedValues:
+      - merlin-python-layer
+  CodeBuildRoleArn:
+    Type: String
+  CodePipelineRoleArn:
+    Type: String
+  CloudFormationDeployerRoleArn:
+    Type: String
+
+Resources:
+  MasterPipeline:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: ../templates/python-layer-pipeline.yml
+      Parameters:
+        Branch: master
+        ArtifactBucket: !Ref ArtifactBucket
+        ManagedApp: !Ref ManagedApp
+        CodeBuildRoleArn: !Ref CodeBuildRoleArn
+        CodePipelineRoleArn: !Ref CodePipelineRoleArn
+        CloudFormationDeployerRoleArn: !Ref CloudFormationDeployerRoleArn
+        TemplatePath: aws-artifacts/cfn/layer.yml
+        ParameterOverrides: |
+          {
+            "ArtifactBucket" : { "Fn::GetArtifactAtt" : ["BuildArtifact", "BucketName"]},
+            "ArtifactKey" : { "Fn::GetArtifactAtt" : ["BuildArtifact", "ObjectKey"]}
+          }
+

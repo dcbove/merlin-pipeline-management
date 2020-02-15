@@ -1,0 +1,52 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Merlin Pipeline Management: Base Stack"
+Parameters:
+  ArtifactBucket:
+    Type: String
+  ManagedApp:
+    Type: String
+    AllowedValues:
+      - merlin-gateway
+  CodeBuildRoleArn:
+    Type: String
+  CodePipelineRoleArn:
+    Type: String
+  CloudFormationDeployerRoleArn:
+    Type: String
+
+Resources:
+  MasterPipeline:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: ../templates/cfn-and-lambda-pipeline.yml
+      Parameters:
+        Branch: master
+        ManagedApp: !Ref ManagedApp
+        ArtifactBucket: !Ref ArtifactBucket
+        CodeBuildRoleArn: !Ref CodeBuildRoleArn
+        CodePipelineRoleArn: !Ref CodePipelineRoleArn
+        CloudFormationDeployerRoleArn: !Ref CloudFormationDeployerRoleArn
+        TemplatePath: merlin-gateway-template.yml
+        ParameterOverrides: |
+          {
+            "ArtifactBucket" : { "Fn::GetArtifactAtt" : ["BuildArtifact", "BucketName"]},
+            "LambdaZipName" : "#{BuildVariables.LAMBDA_FILE_KEY}"
+          }
+
+  DevelopPipeline:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: ../templates/cfn-and-lambda-pipeline.yml
+      Parameters:
+        Branch: develop
+        ManagedApp: !Ref ManagedApp
+        ArtifactBucket: !Ref ArtifactBucket
+        CodeBuildRoleArn: !Ref CodeBuildRoleArn
+        CodePipelineRoleArn: !Ref CodePipelineRoleArn
+        CloudFormationDeployerRoleArn: !Ref CloudFormationDeployerRoleArn
+        TemplatePath: merlin-gateway-template.yml
+        ParameterOverrides: |
+          {
+            "ArtifactBucket" : { "Fn::GetArtifactAtt" : ["BuildArtifact", "BucketName"]},
+            "LambdaZipName" : "#{BuildVariables.LAMBDA_FILE_KEY}"
+          }

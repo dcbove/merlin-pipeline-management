@@ -1,8 +1,11 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: "Merlin Pipeline Management: Merlin Python Layer"
+Description: "Merlin Pipeline Management: Merlin Gateway"
 Parameters:
   Branch:
     Type: String
+    AllowedValues:
+      - master
+      - develop
   ManagedApp:
     Type: String
     Description: The application (or project) being deployed by this pipeline. This must match the repo name.
@@ -16,11 +19,10 @@ Parameters:
     Type: String
   TemplatePath:
     Type: String
-    Description: "Sample value: aws-artifacts/cfn/layer.yml"
+    Description: "Sample Value (this is an output of the app's buildspec yml): merlin-gateway-template.yml"
   ParameterOverrides:
     Type: String
     Description: This is the population of dynamic values passed to the CloudFormation template during cfn deploy
-
 
 Resources:
   CodeBuildProject:
@@ -45,7 +47,7 @@ Resources:
         CloudWatchLogs:
           GroupName: !Sub "/aws/codepipeline/${ManagedApp}"
           Status: ENABLED
-      Name: !Sub "${ManagedApp}-build"
+      Name: !Sub "${Branch}-${ManagedApp}-build"
       QueuedTimeoutInMinutes: 480
       ServiceRole: !Ref CodeBuildRoleArn
       Source:
@@ -74,7 +76,7 @@ Resources:
       ArtifactStore:
         Type: S3
         Location: !Ref ArtifactBucket
-      Name: !Ref ManagedApp
+      Name: !Sub "${Branch}-${ManagedApp}"
       RoleArn: !Ref CodePipelineRoleArn
       Stages:
       - Name: Source
@@ -119,14 +121,16 @@ Resources:
             Provider: CloudFormation
             Version: 1
           Configuration:
-            ActionMode: CREATE_UPDATE
+            ActionMode: REPLACE_ON_FAILURE
+            Capabilities: CAPABILITY_IAM,CAPABILITY_NAMED_IAM,CAPABILITY_AUTO_EXPAND
             ParameterOverrides: !Ref ParameterOverrides
             RoleArn: !Ref CloudFormationDeployerRoleArn
             StackName: !Sub
               - "${branch}-${managedapp}"
               - branch: !Ref Branch
                 managedapp: !Ref ManagedApp
-            TemplatePath: !Sub "SourceArtifact::${TemplatePath}"
+            TemplateConfiguration: !Sub "SourceArtifact::aws-artifacts/cfn-params/${Branch}.json"
+            TemplatePath: !Sub "BuildArtifact::${TemplatePath}"
           InputArtifacts:
           - Name: SourceArtifact
           - Name: BuildArtifact
