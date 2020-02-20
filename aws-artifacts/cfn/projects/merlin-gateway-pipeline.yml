@@ -27,11 +27,7 @@ Resources:
         CodePipelineRoleArn: !Ref CodePipelineRoleArn
         CloudFormationDeployerRoleArn: !Ref CloudFormationDeployerRoleArn
         TemplatePath: merlin-gateway-template.yml
-        ParameterOverrides: |
-          {
-            "ArtifactBucket" : { "Fn::GetArtifactAtt" : ["BuildArtifact", "BucketName"]},
-            "LambdaZipName" : "#{BuildVariables.LAMBDA_FILE_KEY}"
-          }
+        CfnParamsInputKey: cfn-input-params.json
 
   DevelopPipeline:
     Type: AWS::CloudFormation::Stack
@@ -45,8 +41,4 @@ Resources:
         CodePipelineRoleArn: !Ref CodePipelineRoleArn
         CloudFormationDeployerRoleArn: !Ref CloudFormationDeployerRoleArn
         TemplatePath: merlin-gateway-template.yml
-        ParameterOverrides: |
-          {
-            "ArtifactBucket" : { "Fn::GetArtifactAtt" : ["BuildArtifact", "BucketName"]},
-            "LambdaZipName" : "#{BuildVariables.LAMBDA_FILE_KEY}"
-          }
+        CfnParamsInputKey: cfn-input-params.json
